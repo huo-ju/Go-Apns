@@ -12,16 +12,16 @@ import (
 )
 
 type Notification struct {
-    device_token string
-    alert string
-    sound string
-    identifier uint32
-    expiry time.Duration
+    Device_token string
+    Alert string
+    Sound string
+    Identifier uint32
+    Expiry time.Duration
 }
 type NotificationError struct{
-    command uint8
-    status uint8
-    identifier uint32
+    Command uint8
+    Status uint8
+    Identifier uint32
 }
 
 func Connect(cert_filename string,key_filename string, server string) (*tls.Conn,chan NotificationError,chan Notification,error){
@@ -62,9 +62,9 @@ func readError(client_conn *tls.Conn,c chan NotificationError){
     n, _:= client_conn.Read(readb)
     if n > 0 {
         notificationerror := NotificationError{}
-        notificationerror.command = uint8(readb[0])
-        notificationerror.status = uint8(readb[1])
-        notificationerror.identifier = uint32(readb[2])<<24+uint32(readb[3])<<16+uint32(readb[4])<<8+uint32(readb[5])
+        notificationerror.Command = uint8(readb[0])
+        notificationerror.Status = uint8(readb[1])
+        notificationerror.Identifier = uint32(readb[2])<<24+uint32(readb[3])<<16+uint32(readb[4])<<8+uint32(readb[5])
         c <- notificationerror
     }
 }
@@ -75,19 +75,19 @@ func writeMsg(client_conn *tls.Conn,wchan chan Notification){
         var payload map[string](map[string]string)
         payload = make(map[string](map[string]string))
         payload["aps"] =  make(map[string]string)
-        payload["aps"]["alert"] = notification.alert
-        payload["aps"]["sound"]=notification.sound
+        payload["aps"]["alert"] = notification.Alert
+        payload["aps"]["sound"]=notification.Sound
         payloadbyte, _:= json.Marshal(payload)
 
-        tokenbin, err := hex.DecodeString(notification.device_token)
+        tokenbin, err := hex.DecodeString(notification.Device_token)
         if err != nil {
             os.Exit(1)
         }
 
         buffer := bytes.NewBuffer([]byte{})
         binary.Write(buffer, binary.BigEndian, uint8(1))
-        binary.Write(buffer, binary.BigEndian, uint32(notification.identifier))
-        binary.Write(buffer, binary.BigEndian, uint32(time.Second + notification.expiry))
+        binary.Write(buffer, binary.BigEndian, uint32(notification.Identifier))
+        binary.Write(buffer, binary.BigEndian, uint32(time.Second + notification.Expiry))
         binary.Write(buffer, binary.BigEndian, uint16(len(tokenbin)))
         binary.Write(buffer, binary.BigEndian, tokenbin)
         binary.Write(buffer, binary.BigEndian, uint16(len(payloadbyte)))
