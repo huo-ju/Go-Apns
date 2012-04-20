@@ -1,4 +1,4 @@
-package main
+package goapns
 
 import (
     "encoding/json"
