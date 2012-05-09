@@ -1,13 +1,13 @@
 package goapns
 
 import (
+    "fmt"
     "encoding/json"
     "encoding/hex"
     "net"
     "bytes"
     "time"
     "encoding/binary"
-    "os"
     "crypto/tls"
 )
 
@@ -24,19 +24,24 @@ type NotificationError struct{
     Identifier uint32
 }
 
-func Connect(cert_filename string,key_filename string, server string) (*tls.Conn,chan NotificationError,chan Notification,error){
-    wchan := make(chan Notification)
+type Apn struct{
+    Conn *tls.Conn
+    Errorchan chan NotificationError
+}
+
+func Connect(cert_filename string,key_filename string, server string) (*Apn, error){
     rchan := make(chan NotificationError)
+
     cert,cert_err := tls.LoadX509KeyPair(cert_filename,key_filename)
 
     if cert_err != nil {
-        return nil,nil,nil,cert_err
+        return &Apn{nil,nil},cert_err
     }
 
     conn, err:= net.Dial("tcp",server)
 
     if err != nil {
-        return nil,nil,nil,err
+        return &Apn{nil,nil},err
     }
 
     Certificate := []tls.Certificate{cert}
@@ -47,31 +52,17 @@ func Connect(cert_filename string,key_filename string, server string) (*tls.Conn
     var client_conn *tls.Conn = tls.Client(conn,&conf)
     err = client_conn.Handshake()
     if err != nil {
-        return nil,nil,nil,err
+        return &Apn{nil,nil},err
     }
 
-    go writeMsg(client_conn,wchan)
-    go readError(client_conn,rchan)
+    go readError(client_conn, rchan)
 
-    return client_conn,rchan,wchan,nil
+
+    return &Apn{client_conn,rchan},nil
 }
 
-func readError(client_conn *tls.Conn,c chan NotificationError){
-    var readb []byte
-    readb = make([]byte, 6, 6)
-    n, _:= client_conn.Read(readb)
-    if n > 0 {
-        notificationerror := NotificationError{}
-        notificationerror.Command = uint8(readb[0])
-        notificationerror.Status = uint8(readb[1])
-        notificationerror.Identifier = uint32(readb[2])<<24+uint32(readb[3])<<16+uint32(readb[4])<<8+uint32(readb[5])
-        c <- notificationerror
-    }
-}
-
-func writeMsg(client_conn *tls.Conn,wchan chan Notification){
-    for{
-        notification:= <-wchan
+func (apnconn *Apn) SendNotification(notification *Notification) error{
+        fmt.Println(notification.Alert);
         var payload map[string](map[string]string)
         payload = make(map[string](map[string]string))
         payload["aps"] =  make(map[string]string)
@@ -81,7 +72,7 @@ func writeMsg(client_conn *tls.Conn,wchan chan Notification){
 
         tokenbin, err := hex.DecodeString(notification.Device_token)
         if err != nil {
-            os.Exit(1)
+            return err
         }
 
         buffer := bytes.NewBuffer([]byte{})
@@ -94,11 +85,20 @@ func writeMsg(client_conn *tls.Conn,wchan chan Notification){
         binary.Write(buffer, binary.BigEndian, payloadbyte)
         pushPackage := buffer.Bytes()
 
-        _, err = client_conn.Write(pushPackage)
+        _, err = apnconn.Conn.Write(pushPackage)
+        return err
+}
 
-        if err != nil {
-          os.Exit(1)
-        }
+func readError(client_conn *tls.Conn,c chan NotificationError){
+    var readb []byte
+    readb = make([]byte, 6, 6)
+    n, _:= client_conn.Read(readb)
+    if n > 0 {
+        notificationerror := NotificationError{}
+        notificationerror.Command = uint8(readb[0])
+        notificationerror.Status = uint8(readb[1])
+        notificationerror.Identifier = uint32(readb[2])<<24+uint32(readb[3])<<16+uint32(readb[4])<<8+uint32(readb[5])
+        c <- notificationerror
     }
 }
 

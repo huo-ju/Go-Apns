@@ -2,7 +2,7 @@ package main
 
 import (
 "fmt"
-"github.com/virushuo/Go-Apns"
+github.com/virushuo/Go-Apns
 "os"
 "math/rand"
 "time"
@@ -10,7 +10,7 @@ import (
 
 func main(){
 
-    client_conn,rchan,wchan,err := goapns.Connect("apns_dev_cert.pem", "apns_dev_key.pem","gateway.sandbox.push.apple.com:2195")
+    apn,err := goapns.Connect("apns_dev_cert.pem", "apns_dev_key.pem","gateway.sandbox.push.apple.com:2195")
     if err != nil{
         fmt.Printf("connect error: %s\n", err.Error())
         os.Exit(1)
@@ -19,15 +19,24 @@ func main(){
     r := rand.New(rand.NewSource(time.Now().Unix()))
 
     notification := goapns.Notification{}
-    notification.Device_token = "ae5cb3dd7cbffc822050995779cc138cfb70a3c81a36158caf3e8fb71ce7bda1"
-    notification.Alert = "hello world!"
+    notification.Device_token = "YOUR_DEVICE_TOKEN"
+    notification.Alert = "hello world! 0"
     notification.Identifier = r.Uint32()
-    fmt.Println(notification)
-    wchan <- notification
+    err =apn.SendNotification(&notification)
+    fmt.Println(err)
 
-    apn_error := <-rchan
-    fmt.Println(apn_error)
-    client_conn.Close()
+    notification.Alert = "hello world! 1"
+    err =apn.SendNotification(&notification)
+    fmt.Println(err)
+
+    notification.Alert = "hello world! 2"
+    err =apn.SendNotification(&notification)
+    fmt.Println(err)
+
+    notification.Alert = "hello world! 3"
+    err =apn.SendNotification(&notification)
+    fmt.Println(err)
+    apn.Conn.Close()
 
 
 }
