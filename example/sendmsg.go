@@ -2,7 +2,7 @@ package main
 
 import (
 "fmt"
-github.com/virushuo/Go-Apns
+"github.com/virushuo/Go-Apns"
 "os"
 "math/rand"
 "time"
