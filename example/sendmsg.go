@@ -15,6 +15,7 @@ func main(){
         fmt.Printf("connect error: %s\n", err.Error())
         os.Exit(1)
     }
+    go readError(apn.Errorchan) 
 
     r := rand.New(rand.NewSource(time.Now().Unix()))
 
@@ -36,7 +37,10 @@ func main(){
     notification.Alert = "hello world! 3"
     err =apn.SendNotification(&notification)
     fmt.Println(err)
-    apn.Conn.Close()
+    time.Sleep(5E9)
+}
 
-
+func readError(Errorchan chan goapns.NotificationError) {
+    apnerror := <-Errorchan
+    fmt.Println(apnerror)
 }
