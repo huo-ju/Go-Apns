@@ -3,7 +3,7 @@ Go-Apns
 
 Go library for Apple Push Notification Service (APNs)
 
-## Install godis
+## Install Go-Apns
 
 go get github.com/virushuo/Go-Apns
 
