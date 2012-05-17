@@ -36,7 +36,10 @@ type NotificationError struct {
 }
 
 type Apn struct {
-	Conn      *tls.Conn
+	cert tls.Certificate
+	server string
+
+	conn      *tls.Conn
 	Errorchan chan NotificationError
 }
 
@@ -44,31 +47,51 @@ func Connect(cert_filename string, key_filename string, server string) (*Apn, er
 	rchan := make(chan NotificationError)
 
 	cert, cert_err := tls.LoadX509KeyPair(cert_filename, key_filename)
-
 	if cert_err != nil {
-		return &Apn{nil, nil}, cert_err
+		return nil, cert_err
 	}
 
 	conn, err := net.Dial("tcp", server)
-
 	if err != nil {
-		return &Apn{nil, nil}, err
+		return nil, err
 	}
 
-	Certificate := []tls.Certificate{cert}
+	certificate := []tls.Certificate{cert}
 	conf := tls.Config{
-		Certificates: Certificate,
+		Certificates: certificate,
 	}
 
 	var client_conn *tls.Conn = tls.Client(conn, &conf)
 	err = client_conn.Handshake()
 	if err != nil {
-		return &Apn{nil, nil}, err
+		return nil, err
 	}
 
 	go readError(client_conn, rchan)
 
-	return &Apn{client_conn, rchan}, nil
+	return &Apn{cert, server, client_conn, rchan}, nil
+}
+
+func (apnconn *Apn) Reconnect() error {
+	conn, err := net.Dial("tcp", apnconn.server)
+	if err != nil {
+		return err
+	}
+
+	certificate := []tls.Certificate{apnconn.cert}
+	conf := tls.Config{
+		Certificates: certificate,
+	}
+
+	var client_conn *tls.Conn = tls.Client(conn, &conf)
+	err = client_conn.Handshake()
+	if err != nil {
+		return err
+	}
+
+	go readError(client_conn, apnconn.Errorchan)
+
+	return nil
 }
 
 func (apnconn *Apn) SendNotification(notification *Notification) error {
@@ -89,7 +112,7 @@ func (apnconn *Apn) SendNotification(notification *Notification) error {
 	binary.Write(buffer, binary.BigEndian, payloadbyte)
 	pushPackage := buffer.Bytes()
 
-	_, err = apnconn.Conn.Write(pushPackage)
+	_, err = apnconn.conn.Write(pushPackage)
 	return err
 }
 
