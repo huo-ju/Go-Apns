@@ -1,46 +1,46 @@
 package main
 
 import (
-"fmt"
-"github.com/virushuo/Go-Apns"
-"os"
-"math/rand"
-"time"
+	"fmt"
+	"github.com/virushuo/Go-Apns"
+	"math/rand"
+	"os"
+	"time"
 )
 
-func main(){
+func main() {
 
-    apn,err := goapns.Connect("apns_dev_cert.pem", "apns_dev_key.pem","gateway.sandbox.push.apple.com:2195")
-    if err != nil{
-        fmt.Printf("connect error: %s\n", err.Error())
-        os.Exit(1)
-    }
-    go readError(apn.Errorchan) 
+	apn, err := goapns.Connect("apns_dev_cert.pem", "apns_dev_key.pem", "gateway.sandbox.push.apple.com:2195")
+	if err != nil {
+		fmt.Printf("connect error: %s\n", err.Error())
+		os.Exit(1)
+	}
+	go readError(apn.Errorchan)
 
-    r := rand.New(rand.NewSource(time.Now().Unix()))
+	r := rand.New(rand.NewSource(time.Now().Unix()))
 
-    notification := goapns.Notification{}
-    notification.Device_token = "YOUR_DEVICE_TOKEN"
-    notification.Alert = "hello world! 0"
-    notification.Identifier = r.Uint32()
-    err =apn.SendNotification(&notification)
-    fmt.Println(err)
+	notification := goapns.Notification{}
+	notification.Device_token = "YOUR_DEVICE_TOKEN"
+	notification.Alert = "hello world! 0"
+	notification.Identifier = r.Uint32()
+	err = apn.SendNotification(&notification)
+	fmt.Println(err)
 
-    notification.Alert = "hello world! 1"
-    err =apn.SendNotification(&notification)
-    fmt.Println(err)
+	notification.Alert = "hello world! 1"
+	err = apn.SendNotification(&notification)
+	fmt.Println(err)
 
-    notification.Alert = "hello world! 2"
-    err =apn.SendNotification(&notification)
-    fmt.Println(err)
+	notification.Alert = "hello world! 2"
+	err = apn.SendNotification(&notification)
+	fmt.Println(err)
 
-    notification.Alert = "hello world! 3"
-    err =apn.SendNotification(&notification)
-    fmt.Println(err)
-    time.Sleep(5E9)
+	notification.Alert = "hello world! 3"
+	err = apn.SendNotification(&notification)
+	fmt.Println(err)
+	time.Sleep(5E9)
 }
 
 func readError(Errorchan chan goapns.NotificationError) {
-    apnerror := <-Errorchan
-    fmt.Println(apnerror)
+	apnerror := <-Errorchan
+	fmt.Println(apnerror)
 }
