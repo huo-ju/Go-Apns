@@ -9,8 +9,7 @@ import (
 )
 
 func main() {
-
-	apn, err := goapns.Connect("apns_dev_cert.pem", "apns_dev_key.pem", "gateway.sandbox.push.apple.com:2195")
+	apn, err := goapns.Connect("apns_dev_cert.pem", "apns_dev_key.pem", "gateway.sandbox.push.apple.com:2195", "")
 	if err != nil {
 		fmt.Printf("connect error: %s\n", err.Error())
 		os.Exit(1)
