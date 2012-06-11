@@ -1,8 +1,6 @@
 package goapns
 
 import (
-	"crypto/x509"
-	"io/ioutil"
 	"bytes"
 	"crypto/tls"
 	"encoding/binary"
@@ -45,17 +43,7 @@ type Apn struct {
 	Errorchan chan NotificationError
 }
 
-func Connect(cert_filename, key_filename, server, root_ca string) (*Apn, error) {
-	var pool *x509.CertPool
-	if root_ca != "" {
-		pool := x509.NewCertPool()
-		root, err := ioutil.ReadFile(root_ca)
-		if err != nil {
-			return nil, err
-		}
-		pool.AppendCertsFromPEM(root)
-	}
-
+func Connect(cert_filename, key_filename, server string) (*Apn, error) {
 	rchan := make(chan NotificationError)
 
 	cert, cert_err := tls.LoadX509KeyPair(cert_filename, key_filename)
@@ -71,7 +59,6 @@ func Connect(cert_filename, key_filename, server, root_ca string) (*Apn, error) 
 	certificate := []tls.Certificate{cert}
 	conf := tls.Config{
 		Certificates: certificate,
-		RootCAs: pool,
 	}
 
 	var client_conn *tls.Conn = tls.Client(conn, &conf)
