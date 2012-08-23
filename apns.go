@@ -6,27 +6,35 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"net"
 	"time"
 )
 
+type SimpleAps struct {
+	Alert string `json:"alert"`
+	Badge uint   `json:"badge"`
+	Sound string `json:"sound"`
+}
+
 type Notification struct {
-	Device_token string
-	Alert        string
-	Badge        uint
-	Sound        string
-	Identifier   uint32
-	Expiry       time.Duration
-	Args         interface{}
+	DeviceToken string
+	Identifier  uint32
+	Aps         SimpleAps
+	CustomFiels map[string]interface{}
+	Expiry      time.Duration
 }
 
 func (n *Notification) MarshalJSON() ([]byte, error) {
-	alert, _ := json.Marshal(n.Alert)
-	badge, _ := json.Marshal(n.Badge)
-	sound, _ := json.Marshal(n.Sound)
-	args, _ := json.Marshal(n.Args)
-	return []byte(fmt.Sprintf("{\"aps\":{\"alert\":%s,\"badge\":%s,\"sound\":%s},\"args\":%s}", alert, badge, sound, args)), nil
+	model := make(map[string]interface{})
+	model["aps"] = n.Aps
+
+	if n.CustomFiels != nil {
+		for key, value := range n.CustomFiels {
+			model[key] = value
+		}
+	}
+
+	return json.Marshal(model)
 }
 
 type NotificationError struct {
@@ -36,7 +44,7 @@ type NotificationError struct {
 }
 
 type Apn struct {
-	cert tls.Certificate
+	cert   tls.Certificate
 	server string
 
 	conn      *tls.Conn
@@ -95,9 +103,9 @@ func (apnconn *Apn) Reconnect() error {
 }
 
 func (apnconn *Apn) SendNotification(notification *Notification) error {
-	payloadbyte, _ := json.Marshal(notification)
+	payloadbyte, _ := notification.MarshalJSON()
 
-	tokenbin, err := hex.DecodeString(notification.Device_token)
+	tokenbin, err := hex.DecodeString(notification.DeviceToken)
 	if err != nil {
 		return err
 	}
