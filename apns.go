@@ -22,9 +22,9 @@ type Context struct {
 }
 
 type Notification struct {
-	DeviceToken       string
-	Identifier        uint32
-	ExpireAfterSecond int
+	DeviceToken        string
+	Identifier         uint32
+	ExpireAfterSeconds int
 
 	Context *Context
 }
@@ -105,7 +105,7 @@ func (apnconn *Apn) SendNotification(notification *Notification) error {
 	}
 
 	payloadbyte, _ := notification.ContextJSON()
-	expiry := time.Now().Add(time.Duration(notification.ExpireAfterSecond) * time.Second).Unix()
+	expiry := time.Now().Add(time.Duration(notification.ExpireAfterSeconds) * time.Second).Unix()
 
 	buffer := bytes.NewBuffer([]byte{})
 	binary.Write(buffer, binary.BigEndian, uint8(1))
