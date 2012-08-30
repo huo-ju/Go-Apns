@@ -18,24 +18,25 @@ func main() {
 
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 
+	context := goapns.Context{}
+	context.Aps.Alert = "hello world! 0"
+
 	notification := goapns.Notification{}
 	notification.DeviceToken = "YOUR_DEVICE_TOKEN"
-	notification.Aps = goapns.SimpleAps{
-		Alert: "hello world! 0",
-	}
 	notification.Identifier = r.Uint32()
+	notification.Context = &context
 	err = apn.SendNotification(&notification)
 	fmt.Println(err)
 
-	notification.Aps.Alert = "hello world! 1"
+	notification.Context.Aps.Alert = "hello world! 1"
 	err = apn.SendNotification(&notification)
 	fmt.Println(err)
 
-	notification.Aps.Alert = "hello world! 2"
+	notification.Context.Aps.Alert = "hello world! 2"
 	err = apn.SendNotification(&notification)
 	fmt.Println(err)
 
-	notification.Aps.Alert = "hello world! 3"
+	notification.Context.Aps.Alert = "hello world! 3"
 	err = apn.SendNotification(&notification)
 	fmt.Println(err)
 	time.Sleep(5E9)

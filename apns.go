@@ -16,25 +16,21 @@ type SimpleAps struct {
 	Sound string `json:"sound"`
 }
 
+type Context struct {
+	Aps SimpleAps   `json:"aps"`
+	Arg interface{} `json:"arg"`
+}
+
 type Notification struct {
 	DeviceToken string
 	Identifier  uint32
-	Aps         SimpleAps
-	CustomFiels map[string]interface{}
 	Expiry      time.Duration
+
+	Context *Context
 }
 
-func (n *Notification) MarshalJSON() ([]byte, error) {
-	model := make(map[string]interface{})
-	model["aps"] = n.Aps
-
-	if n.CustomFiels != nil {
-		for key, value := range n.CustomFiels {
-			model[key] = value
-		}
-	}
-
-	return json.Marshal(model)
+func (n *Notification) ContextJSON() ([]byte, error) {
+	return json.Marshal(n.Context)
 }
 
 type NotificationError struct {
@@ -103,12 +99,12 @@ func (apnconn *Apn) Reconnect() error {
 }
 
 func (apnconn *Apn) SendNotification(notification *Notification) error {
-	payloadbyte, _ := notification.MarshalJSON()
-
 	tokenbin, err := hex.DecodeString(notification.DeviceToken)
 	if err != nil {
 		return err
 	}
+
+	payloadbyte, _ := notification.ContextJSON()
 
 	buffer := bytes.NewBuffer([]byte{})
 	binary.Write(buffer, binary.BigEndian, uint8(1))
