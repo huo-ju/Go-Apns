@@ -18,18 +18,12 @@ type Notification struct {
 	Payload *Payload
 }
 
-type NotificationError struct {
-	Command    uint8
-	Status     uint8
-	Identifier uint32
-}
-
 // An Apn contain a ErrorChan channle when connected to apple server. When a notification sent wrong, you can get the error infomation from this channel.
 type Apn struct {
 	ErrorChan <-chan NotificationError
 
-	cert      tls.Certificate
 	server    string
+	conf      *tls.Config
 	conn      *tls.Conn
 	errorChan chan<- NotificationError
 }
@@ -38,50 +32,44 @@ type Apn struct {
 func Connect(cert_filename, key_filename, server string) (*Apn, error) {
 	rchan := make(chan NotificationError)
 
-	cert, cert_err := tls.LoadX509KeyPair(cert_filename, key_filename)
-	if cert_err != nil {
-		return nil, cert_err
-	}
-
-	conn, err := net.Dial("tcp", server)
+	cert, err := tls.LoadX509KeyPair(cert_filename, key_filename)
 	if err != nil {
 		return nil, err
 	}
 
 	certificate := []tls.Certificate{cert}
-	conf := tls.Config{
+	conf := &tls.Config{
 		Certificates: certificate,
 	}
 
-	var client_conn *tls.Conn = tls.Client(conn, &conf)
-	err = client_conn.Handshake()
-	if err != nil {
-		return nil, err
+	ret := &Apn{
+		ErrorChan: rchan,
+		server:    server,
+		conf:      conf,
+		errorChan: rchan,
 	}
 
-	go readError(client_conn, rchan)
-
-	return &Apn{rchan, cert, server, client_conn, rchan}, nil
+	err = ret.Reconnect()
+	return ret, err
 }
 
 // Reconnect if connection break.
 func (apnconn *Apn) Reconnect() error {
+	// make sure last readError(...) will fail when reading.
+	apnconn.conn.Close()
+
 	conn, err := net.Dial("tcp", apnconn.server)
 	if err != nil {
 		return err
 	}
 
-	certificate := []tls.Certificate{apnconn.cert}
-	conf := tls.Config{
-		Certificates: certificate,
-	}
-
-	var client_conn *tls.Conn = tls.Client(conn, &conf)
+	var client_conn *tls.Conn = tls.Client(conn, apnconn.conf)
 	err = client_conn.Handshake()
 	if err != nil {
 		return err
 	}
 
+	apnconn.conn = client_conn
 	go readError(client_conn, apnconn.errorChan)
 
 	return nil
@@ -111,15 +99,14 @@ func (apnconn *Apn) SendNotification(notification *Notification) error {
 	return err
 }
 
-func readError(client_conn *tls.Conn, c chan<- NotificationError) {
-	var readb []byte
-	readb = make([]byte, 6, 6)
-	n, _ := client_conn.Read(readb)
-	if n > 0 {
-		notificationerror := NotificationError{}
-		notificationerror.Command = uint8(readb[0])
-		notificationerror.Status = uint8(readb[1])
-		notificationerror.Identifier = uint32(readb[2])<<24 + uint32(readb[3])<<16 + uint32(readb[4])<<8 + uint32(readb[5])
-		c <- notificationerror
+func readError(conn *tls.Conn, c chan<- NotificationError) {
+	p := make([]byte, 6, 6)
+	for {
+		n, err := conn.Read(p)
+		e := NewNotificationError(p[:n], err)
+		c <- e
+		if err != nil {
+			return
+		}
 	}
 }
