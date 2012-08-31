@@ -27,8 +27,8 @@ type Payload struct {
 	customProperty map[string]interface{}
 }
 
-// Set a custom key with value. If key is "aps", do nothing.
-func (l *Payload) Set(key string, value interface{}) {
+// Set a custom key with value, overwriting any existed key. If key is "aps", do nothing.
+func (l *Payload) SetCustom(key string, value interface{}) {
 	if key == "aps" {
 		return
 	}
@@ -39,7 +39,7 @@ func (l *Payload) Set(key string, value interface{}) {
 }
 
 // Get a custom key's value. If key is "aps", return nil.
-func (l *Payload) Get(key string) interface{} {
+func (l *Payload) GetCustom(key string) interface{} {
 	if key == "aps" || l.customProperty == nil {
 		return nil
 	}
