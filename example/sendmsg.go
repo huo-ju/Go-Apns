@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/virushuo/Go-Apns"
-	"math/rand"
 	"os"
 	"time"
 )
@@ -16,33 +15,55 @@ func main() {
 	}
 	go readError(apn.ErrorChan)
 
-	r := rand.New(rand.NewSource(time.Now().Unix()))
+	token := "your device token"
 
 	payload := goapns.Payload{}
 	payload.Aps.Alert = "hello world! 0"
 
 	notification := goapns.Notification{}
-	notification.DeviceToken = "YOUR_DEVICE_TOKEN"
-	notification.Identifier = r.Uint32()
+	notification.DeviceToken = token
+	notification.Identifier = 0
 	notification.Payload = &payload
 	err = apn.SendNotification(&notification)
-	fmt.Println(err)
+	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 
+	notification.Identifier++
 	notification.Payload.Aps.Alert = "hello world! 1"
 	err = apn.SendNotification(&notification)
-	fmt.Println(err)
+	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 
+	notification.Identifier++
 	notification.Payload.Aps.Alert = "hello world! 2"
 	err = apn.SendNotification(&notification)
-	fmt.Println(err)
+	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 
+	notification.Identifier++
+	notification.DeviceToken = ""
 	notification.Payload.Aps.Alert = "hello world! 3"
 	err = apn.SendNotification(&notification)
-	fmt.Println(err)
-	time.Sleep(5E9)
+	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
+	time.Sleep(1E9)
+
+	err = apn.Reconnect()
+	fmt.Printf("reconnect: %s\n", err)
+
+	notification.Identifier++
+	notification.DeviceToken = token
+	notification.Payload.Aps.Alert = "re hello world! 0"
+	err = apn.SendNotification(&notification)
+	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
+
+	notification.Identifier++
+	notification.DeviceToken = ""
+	notification.Payload.Aps.Alert = "re hello world! 1"
+	err = apn.SendNotification(&notification)
+	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
+	time.Sleep(1E9)
 }
 
 func readError(errorChan <-chan goapns.NotificationError) {
-	apnerror := <-errorChan
-	fmt.Println(apnerror)
+	for {
+		apnerror := <-errorChan
+		fmt.Println(apnerror.Error())
+	}
 }
