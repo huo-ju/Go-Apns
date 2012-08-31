@@ -56,7 +56,9 @@ func Connect(cert_filename, key_filename, server string) (*Apn, error) {
 // Reconnect if connection break.
 func (apnconn *Apn) Reconnect() error {
 	// make sure last readError(...) will fail when reading.
-	apnconn.conn.Close()
+	if apnconn.conf != nil {
+		apnconn.conn.Close()
+	}
 
 	conn, err := net.Dial("tcp", apnconn.server)
 	if err != nil {
