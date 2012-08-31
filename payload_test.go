@@ -107,7 +107,7 @@ func TestPayloadMarshal(t *testing.T) {
 	{
 		payload := Payload{}
 		payload.Aps.Alert = "Message received from Bob"
-		payload.Set("acme2", []string{"bang", "whiz"})
+		payload.SetCustom("acme2", []string{"bang", "whiz"})
 		j, err := json.Marshal(payload)
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
@@ -122,8 +122,8 @@ func TestPayloadMarshal(t *testing.T) {
 		payload.Aps.Alert = "You got your emails."
 		payload.Aps.Badge = 9
 		payload.Aps.Sound = "bingbong.aiff"
-		payload.Set("acme1", "bar")
-		payload.Set("acme2", 42)
+		payload.SetCustom("acme1", "bar")
+		payload.SetCustom("acme2", 42)
 		j, err := json.Marshal(payload)
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
@@ -135,7 +135,7 @@ func TestPayloadMarshal(t *testing.T) {
 
 	{
 		payload := Payload{}
-		payload.Set("acme2", []int{5, 8})
+		payload.SetCustom("acme2", []int{5, 8})
 		j, err := json.Marshal(payload)
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
@@ -152,7 +152,7 @@ func TestPayloadMarshal(t *testing.T) {
 			LockArgs: []string{"Jenna", "Frank"},
 		}
 		payload.Aps.Sound = "chime"
-		payload.Set("acme", "foo")
+		payload.SetCustom("acme", "foo")
 		j, err := json.Marshal(payload)
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
