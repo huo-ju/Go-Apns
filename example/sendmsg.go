@@ -14,35 +14,35 @@ func main() {
 		fmt.Printf("connect error: %s\n", err.Error())
 		os.Exit(1)
 	}
-	go readError(apn.Errorchan)
+	go readError(apn.ErrorChan)
 
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 
-	context := goapns.Context{}
-	context.Aps.Alert = "hello world! 0"
+	payload := goapns.Payload{}
+	payload.Aps.Alert = "hello world! 0"
 
 	notification := goapns.Notification{}
 	notification.DeviceToken = "YOUR_DEVICE_TOKEN"
 	notification.Identifier = r.Uint32()
-	notification.Context = &context
+	notification.Payload = &payload
 	err = apn.SendNotification(&notification)
 	fmt.Println(err)
 
-	notification.Context.Aps.Alert = "hello world! 1"
+	notification.Payload.Aps.Alert = "hello world! 1"
 	err = apn.SendNotification(&notification)
 	fmt.Println(err)
 
-	notification.Context.Aps.Alert = "hello world! 2"
+	notification.Payload.Aps.Alert = "hello world! 2"
 	err = apn.SendNotification(&notification)
 	fmt.Println(err)
 
-	notification.Context.Aps.Alert = "hello world! 3"
+	notification.Payload.Aps.Alert = "hello world! 3"
 	err = apn.SendNotification(&notification)
 	fmt.Println(err)
 	time.Sleep(5E9)
 }
 
-func readError(Errorchan chan goapns.NotificationError) {
-	apnerror := <-Errorchan
+func readError(errorChan <-chan goapns.NotificationError) {
+	apnerror := <-errorChan
 	fmt.Println(apnerror)
 }

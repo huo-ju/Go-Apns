@@ -10,27 +10,12 @@ import (
 	"time"
 )
 
-type SimpleAps struct {
-	Alert string `json:"alert"`
-	Badge uint   `json:"badge"`
-	Sound string `json:"sound"`
-}
-
-type Context struct {
-	Aps SimpleAps   `json:"aps"`
-	Arg interface{} `json:"arg"`
-}
-
 type Notification struct {
 	DeviceToken        string
 	Identifier         uint32
 	ExpireAfterSeconds int
 
-	Context *Context
-}
-
-func (n *Notification) ContextJSON() ([]byte, error) {
-	return json.Marshal(n.Context)
+	Payload *Payload
 }
 
 type NotificationError struct {
@@ -39,14 +24,17 @@ type NotificationError struct {
 	Identifier uint32
 }
 
+// An Apn contain a ErrorChan channle when connected to apple server. When a notification sent wrong, you can get the error infomation from this channel.
 type Apn struct {
-	cert   tls.Certificate
-	server string
+	ErrorChan <-chan NotificationError
 
+	cert      tls.Certificate
+	server    string
 	conn      *tls.Conn
-	Errorchan chan NotificationError
+	errorChan chan<- NotificationError
 }
 
+// Connect to apple server, with cert_filename and key_filename.
 func Connect(cert_filename, key_filename, server string) (*Apn, error) {
 	rchan := make(chan NotificationError)
 
@@ -73,9 +61,10 @@ func Connect(cert_filename, key_filename, server string) (*Apn, error) {
 
 	go readError(client_conn, rchan)
 
-	return &Apn{cert, server, client_conn, rchan}, nil
+	return &Apn{rchan, cert, server, client_conn, rchan}, nil
 }
 
+// Reconnect if connection break.
 func (apnconn *Apn) Reconnect() error {
 	conn, err := net.Dial("tcp", apnconn.server)
 	if err != nil {
@@ -93,18 +82,19 @@ func (apnconn *Apn) Reconnect() error {
 		return err
 	}
 
-	go readError(client_conn, apnconn.Errorchan)
+	go readError(client_conn, apnconn.errorChan)
 
 	return nil
 }
 
+// Send a notificatioin to iOS
 func (apnconn *Apn) SendNotification(notification *Notification) error {
 	tokenbin, err := hex.DecodeString(notification.DeviceToken)
 	if err != nil {
 		return err
 	}
 
-	payloadbyte, _ := notification.ContextJSON()
+	payloadbyte, _ := json.Marshal(notification.Payload)
 	expiry := time.Now().Add(time.Duration(notification.ExpireAfterSeconds) * time.Second).Unix()
 
 	buffer := bytes.NewBuffer([]byte{})
@@ -121,7 +111,7 @@ func (apnconn *Apn) SendNotification(notification *Notification) error {
 	return err
 }
 
-func readError(client_conn *tls.Conn, c chan NotificationError) {
+func readError(client_conn *tls.Conn, c chan<- NotificationError) {
 	var readb []byte
 	readb = make([]byte, 6, 6)
 	n, _ := client_conn.Read(readb)
@@ -132,7 +122,4 @@ func readError(client_conn *tls.Conn, c chan NotificationError) {
 		notificationerror.Identifier = uint32(readb[2])<<24 + uint32(readb[3])<<16 + uint32(readb[4])<<8 + uint32(readb[5])
 		c <- notificationerror
 	}
-}
-
-func init() {
 }
