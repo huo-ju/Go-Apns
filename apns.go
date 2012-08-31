@@ -77,6 +77,15 @@ func (apnconn *Apn) Reconnect() error {
 	return nil
 }
 
+func (apnconn *Apn) Close() error {
+	if apnconn.conn == nil {
+		return nil
+	}
+	conn := apnconn.conn
+	apnconn.conn = nil
+	return conn.Close()
+}
+
 // Send a notificatioin to iOS
 func (apnconn *Apn) SendNotification(notification *Notification) error {
 	tokenbin, err := hex.DecodeString(notification.DeviceToken)

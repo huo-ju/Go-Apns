@@ -59,6 +59,18 @@ func main() {
 	err = apn.SendNotification(&notification)
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 	time.Sleep(1E9)
+
+	err = apn.Reconnect()
+	fmt.Printf("reconnect: %s\n", err)
+
+	notification.Identifier++
+	notification.DeviceToken = token
+	notification.Payload.Aps.Alert = "rere hello world! 0"
+	err = apn.SendNotification(&notification)
+	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
+
+	apn.Close()
+	time.Sleep(1E9)
 }
 
 func readError(errorChan <-chan goapns.NotificationError) {
