@@ -19,11 +19,6 @@ type Notification struct {
 	Payload *Payload
 }
 
-type sendArg struct {
-	n   *Notification
-	err chan error
-}
-
 // Send a notification to iOS
 func (apnconn *Apn) SendNotification(notification *Notification) error {
 	tokenbin, err := hex.DecodeString(notification.DeviceToken)
@@ -88,38 +83,45 @@ func New(cert_filename, key_filename, server string, timeOutInSeconds int) (*Apn
 	return ret, err
 }
 
-// Send a notification to iOS
-func (a *Apn) Send(notification *Notification) error {
-	arg := &sendArg{
-		n:   notification,
-		err: make(chan error),
-	}
-	a.sendChan <- arg
-	return <-arg.err
+type sendArg struct {
+	n   *Notification
+	err chan<- error
 }
 
-func (a *Apn) connect() error {
+// Send a notification to iOS
+func (a *Apn) Send(notification *Notification) error {
+	err := make(chan error)
+	arg := &sendArg{
+		n:   notification,
+		err: err,
+	}
+	a.sendChan <- arg
+	return <-err
+}
+
+func (a *Apn) connect() (<-chan int, error) {
 	// make sure last readError(...) will fail when reading.
 	err := a.close()
 	if err != nil {
-		return fmt.Errorf("close last connection failed: %s", err)
+		return nil, fmt.Errorf("close last connection failed: %s", err)
 	}
 
 	conn, err := net.Dial("tcp", a.server)
 	if err != nil {
-		return fmt.Errorf("connect to server error: %d", err)
+		return nil, fmt.Errorf("connect to server error: %d", err)
 	}
 
 	var client_conn *tls.Conn = tls.Client(conn, a.conf)
 	err = client_conn.Handshake()
 	if err != nil {
-		return fmt.Errorf("handshake server error: %s", err)
+		return nil, fmt.Errorf("handshake server error: %s", err)
 	}
 
 	a.conn = client_conn
-	go readError(client_conn, a.errorChan)
+	quit := make(chan int)
+	go readError(client_conn, quit, a.errorChan)
 
-	return nil
+	return quit, nil
 }
 
 func (a *Apn) close() error {
@@ -159,18 +161,18 @@ func (a *Apn) send(notification *Notification) error {
 
 func sendLoop(apn *Apn) {
 	for {
-		select {
-		case arg := <-apn.sendChan:
-			err := apn.connect()
-			if err != nil {
-				arg.err <- err
-				continue
-			}
-			arg.err <- apn.send(arg.n)
+		arg := <-apn.sendChan
+		quit, err := apn.connect()
+		if err != nil {
+			arg.err <- err
+			continue
 		}
+		arg.err <- apn.send(arg.n)
 
 		for connected := true; connected; {
 			select {
+			case <-quit:
+				connected = false
 			case <-time.After(apn.timeout):
 				connected = false
 			case arg := <-apn.sendChan:
@@ -178,7 +180,7 @@ func sendLoop(apn *Apn) {
 			}
 		}
 
-		err := apn.close()
+		err = apn.close()
 		if err != nil {
 			e := NewNotificationError(nil, err)
 			apn.errorChan <- e
@@ -186,13 +188,14 @@ func sendLoop(apn *Apn) {
 	}
 }
 
-func readError(conn *tls.Conn, c chan<- NotificationError) {
+func readError(conn *tls.Conn, quit chan<- int, c chan<- NotificationError) {
 	p := make([]byte, 6, 6)
 	for {
 		n, err := conn.Read(p)
 		e := NewNotificationError(p[:n], err)
 		c <- e
 		if err != nil {
+			quit <- 1
 			return
 		}
 	}
