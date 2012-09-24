@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	apn, err := apns.New("apns_dev_cert.pem", "apns_dev_key.pem", "gateway.sandbox.push.apple.com:2195", 1)
+	apn, err := apns.New("apns_dev_cert.pem", "apns_dev_key.pem", "gateway.sandbox.push.apple.com:2195", 1*time.Second)
 	if err != nil {
 		fmt.Printf("connect error: %s\n", err.Error())
 		os.Exit(1)

@@ -19,30 +19,6 @@ type Notification struct {
 	Payload *Payload
 }
 
-// Send a notification to iOS
-func (apnconn *Apn) SendNotification(notification *Notification) error {
-	tokenbin, err := hex.DecodeString(notification.DeviceToken)
-	if err != nil {
-		return err
-	}
-
-	payloadbyte, _ := json.Marshal(notification.Payload)
-	expiry := time.Now().Add(time.Duration(notification.ExpireAfterSeconds) * time.Second).Unix()
-
-	buffer := bytes.NewBuffer([]byte{})
-	binary.Write(buffer, binary.BigEndian, uint8(1))
-	binary.Write(buffer, binary.BigEndian, uint32(notification.Identifier))
-	binary.Write(buffer, binary.BigEndian, uint32(expiry))
-	binary.Write(buffer, binary.BigEndian, uint16(len(tokenbin)))
-	binary.Write(buffer, binary.BigEndian, tokenbin)
-	binary.Write(buffer, binary.BigEndian, uint16(len(payloadbyte)))
-	binary.Write(buffer, binary.BigEndian, payloadbyte)
-	pushPackage := buffer.Bytes()
-
-	_, err = apnconn.conn.Write(pushPackage)
-	return err
-}
-
 // An Apn contain a ErrorChan channle when connected to apple server. When a notification sent wrong, you can get the error infomation from this channel.
 type Apn struct {
 	ErrorChan <-chan NotificationError
@@ -57,7 +33,7 @@ type Apn struct {
 }
 
 // New Apn with cert_filename and key_filename.
-func New(cert_filename, key_filename, server string, timeOutInSeconds int) (*Apn, error) {
+func New(cert_filename, key_filename, server string, timeout time.Duration) (*Apn, error) {
 	echan := make(chan NotificationError)
 
 	cert, err := tls.LoadX509KeyPair(cert_filename, key_filename)
@@ -74,7 +50,7 @@ func New(cert_filename, key_filename, server string, timeOutInSeconds int) (*Apn
 		ErrorChan: echan,
 		server:    server,
 		conf:      conf,
-		timeout:   time.Duration(timeOutInSeconds) * time.Second,
+		timeout:   timeout,
 		sendChan:  make(chan *sendArg),
 		errorChan: echan,
 	}
