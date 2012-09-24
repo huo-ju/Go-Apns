@@ -1,4 +1,4 @@
-package goapns
+package apns
 
 import (
 	"fmt"

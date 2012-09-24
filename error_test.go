@@ -1,4 +1,4 @@
-package goapns
+package apns
 
 import (
 	"io"
@@ -59,6 +59,15 @@ func TestNotificationError(t *testing.T) {
 	{
 		p := []byte{1, 2, 3, 4}
 		e := NewNotificationError(p, io.EOF)
+		got := e.Error()
+		expect := "EOF"
+		if got != expect {
+			t.Errorf("got: %s, expect: %s", got, expect)
+		}
+	}
+
+	{
+		e := NewNotificationError(nil, io.EOF)
 		got := e.Error()
 		expect := "EOF"
 		if got != expect {
