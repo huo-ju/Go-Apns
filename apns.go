@@ -59,9 +59,8 @@ func New(cert_filename, key_filename, server string, timeout time.Duration) (*Ap
 	return ret, err
 }
 
-type sendArg struct {
-	n   *Notification
-	err chan<- error
+func (a *Apn) GetErrorChan() <-chan NotificationError {
+	return a.ErrorChan
 }
 
 // Send a notification to iOS
@@ -73,6 +72,11 @@ func (a *Apn) Send(notification *Notification) error {
 	}
 	a.sendChan <- arg
 	return <-err
+}
+
+type sendArg struct {
+	n   *Notification
+	err chan<- error
 }
 
 func (a *Apn) connect() (<-chan int, error) {
