@@ -79,9 +79,18 @@ type sendArg struct {
 	err chan<- error
 }
 
+func (a *Apn) Close() error {
+	if a.conn == nil {
+		return nil
+	}
+	conn := a.conn
+	a.conn = nil
+	return conn.Close()
+}
+
 func (a *Apn) connect() (<-chan int, error) {
 	// make sure last readError(...) will fail when reading.
-	err := a.close()
+	err := a.Close()
 	if err != nil {
 		return nil, fmt.Errorf("close last connection failed: %s", err)
 	}
@@ -102,15 +111,6 @@ func (a *Apn) connect() (<-chan int, error) {
 	go readError(client_conn, quit, a.errorChan)
 
 	return quit, nil
-}
-
-func (a *Apn) close() error {
-	if a.conn == nil {
-		return nil
-	}
-	conn := a.conn
-	a.conn = nil
-	return conn.Close()
 }
 
 func (a *Apn) send(notification *Notification) error {
@@ -160,7 +160,7 @@ func sendLoop(apn *Apn) {
 			}
 		}
 
-		err = apn.close()
+		err = apn.Close()
 		if err != nil {
 			e := NewNotificationError(nil, err)
 			apn.errorChan <- e

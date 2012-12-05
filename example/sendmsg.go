@@ -71,6 +71,7 @@ func main() {
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 	time.Sleep(2e9)
 
+	apn.Close()
 }
 
 func readError(errorChan <-chan apns.NotificationError) {
