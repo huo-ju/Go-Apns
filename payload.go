@@ -49,9 +49,6 @@ func (l Payload) MarshalJSON() ([]byte, error) {
 	if l.customProperty == nil {
 		l.customProperty = make(map[string]interface{})
 	}
-	if l.Aps.AlertStruct != nil {
-		l.Aps.Alert = ""
-	}
 	l.customProperty["aps"] = l.Aps
 	return json.Marshal(l.customProperty)
 }
