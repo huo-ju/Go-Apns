@@ -21,7 +21,7 @@ type Notification struct {
 
 // An Apn contain a ErrorChan channle when connected to apple server. When a notification sent wrong, you can get the error infomation from this channel.
 type Apn struct {
-	ErrorChan <-chan NotificationError
+	ErrorChan <-chan error
 
 	server  string
 	conf    *tls.Config
@@ -29,12 +29,12 @@ type Apn struct {
 	timeout time.Duration
 
 	sendChan  chan *sendArg
-	errorChan chan NotificationError
+	errorChan chan error
 }
 
 // New Apn with cert_filename and key_filename.
 func New(cert_filename, key_filename, server string, timeout time.Duration) (*Apn, error) {
-	echan := make(chan NotificationError)
+	echan := make(chan error)
 
 	cert, err := tls.LoadX509KeyPair(cert_filename, key_filename)
 	if err != nil {
@@ -59,7 +59,7 @@ func New(cert_filename, key_filename, server string, timeout time.Duration) (*Ap
 	return ret, err
 }
 
-func (a *Apn) GetErrorChan() <-chan NotificationError {
+func (a *Apn) GetErrorChan() <-chan error {
 	return a.ErrorChan
 }
 
@@ -168,7 +168,7 @@ func sendLoop(apn *Apn) {
 	}
 }
 
-func readError(conn *tls.Conn, quit chan<- int, c chan<- NotificationError) {
+func readError(conn *tls.Conn, quit chan<- int, c chan<- error) {
 	p := make([]byte, 6, 6)
 	for {
 		n, err := conn.Read(p)

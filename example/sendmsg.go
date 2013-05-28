@@ -18,7 +18,7 @@ func main() {
 	token := "your device token"
 
 	payload := apns.Payload{}
-	payload.Aps.Alert = "hello world! 0"
+	payload.Aps.Alert.Body = "hello world! 0"
 
 	notification := apns.Notification{}
 	notification.DeviceToken = token
@@ -28,45 +28,45 @@ func main() {
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 
 	notification.Identifier++
-	notification.Payload.Aps.Alert = "hello world! 1"
+	notification.Payload.Aps.Alert.Body = "hello world! 1"
 	err = apn.Send(&notification)
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 
 	notification.Identifier++
-	notification.Payload.Aps.Alert = "hello world! 2"
+	notification.Payload.Aps.Alert.Body = "hello world! 2"
 	err = apn.Send(&notification)
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 
 	notification.Identifier++
 	notification.DeviceToken = ""
-	notification.Payload.Aps.Alert = "hello world! 3"
+	notification.Payload.Aps.Alert.Body = "hello world! 3"
 	err = apn.Send(&notification)
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 	time.Sleep(1E9)
 
 	notification.Identifier++
 	notification.DeviceToken = token
-	notification.Payload.Aps.Alert = "re hello world! 0"
+	notification.Payload.Aps.Alert.Body = "re hello world! 0"
 	err = apn.Send(&notification)
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 
 	notification.Identifier++
 	notification.DeviceToken = ""
-	notification.Payload.Aps.Alert = "re hello world! 1"
+	notification.Payload.Aps.Alert.Body = "re hello world! 1"
 	err = apn.Send(&notification)
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 	time.Sleep(1E9)
 
 	notification.Identifier++
 	notification.DeviceToken = token
-	notification.Payload.Aps.Alert = "rere hello world! 0"
+	notification.Payload.Aps.Alert.Body = "rere hello world! 0"
 	err = apn.Send(&notification)
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 	time.Sleep(2e9)
 
 	notification.Identifier++
 	notification.DeviceToken = token
-	notification.Payload.Aps.Alert = "rere hello world! 1"
+	notification.Payload.Aps.Alert.Body = "rere hello world! 1"
 	err = apn.Send(&notification)
 	fmt.Printf("send id(%x): %s\n", notification.Identifier, err)
 	time.Sleep(2e9)
@@ -74,7 +74,7 @@ func main() {
 	apn.Close()
 }
 
-func readError(errorChan <-chan apns.NotificationError) {
+func readError(errorChan <-chan error) {
 	for {
 		apnerror := <-errorChan
 		fmt.Println(apnerror.Error())

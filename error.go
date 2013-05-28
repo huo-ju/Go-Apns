@@ -29,7 +29,7 @@ func NewNotificationError(p []byte, err error) (e NotificationError) {
 	return
 }
 
-func (e *NotificationError) Error() string {
+func (e NotificationError) Error() string {
 	if e.OtherError != nil {
 		return e.OtherError.Error()
 	}
@@ -62,6 +62,6 @@ func (e *NotificationError) Error() string {
 	return fmt.Sprintf("%s(%d): id(%x)", status, e.Status, e.Identifier)
 }
 
-func (e *NotificationError) String() string {
+func (e NotificationError) String() string {
 	return e.Error()
 }

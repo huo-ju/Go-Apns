@@ -36,7 +36,7 @@ func TestAlertMarshal(t *testing.T) {
 func TestApsMarshal(t *testing.T) {
 	{
 		aps := Aps{}
-		aps.AlertStruct = &Alert{
+		aps.Alert = Alert{
 			LockKey:  "GAME_PLAY_REQUEST_FORMAT",
 			LockArgs: []string{"Jenna", "Frank"},
 		}
@@ -51,19 +51,19 @@ func TestApsMarshal(t *testing.T) {
 
 	{
 		aps := Aps{}
-		aps.Alert = "Message received from Bob"
+		aps.Alert.Body = "Message received from Bob"
 		j, err := json.Marshal(aps)
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
 		}
-		if got, expect := string(j), `{"alert":"Message received from Bob"}`; got != expect {
+		if got, expect := string(j), `{"alert":{"body":"Message received from Bob"}}`; got != expect {
 			t.Errorf("got: %s, expect: %s", got, expect)
 		}
 	}
 
 	{
 		aps := Aps{}
-		aps.AlertStruct = &Alert{
+		aps.Alert = Alert{
 			Body:          "Bob wants to play poker",
 			ActionLockKey: "PLAY",
 		}
@@ -79,14 +79,14 @@ func TestApsMarshal(t *testing.T) {
 
 	{
 		aps := Aps{}
-		aps.Alert = "You got your emails."
+		aps.Alert.Body = "You got your emails."
 		aps.Badge = 9
 		aps.Sound = "bingbong.aiff"
 		j, err := json.Marshal(aps)
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
 		}
-		if got, expect := string(j), `{"alert":"You got your emails.","badge":9,"sound":"bingbong.aiff"}`; got != expect {
+		if got, expect := string(j), `{"alert":{"body":"You got your emails."},"badge":9,"sound":"bingbong.aiff"}`; got != expect {
 			t.Errorf("got: %s, expect: %s", got, expect)
 		}
 	}
@@ -97,7 +97,7 @@ func TestApsMarshal(t *testing.T) {
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
 		}
-		if got, expect := string(j), `{}`; got != expect {
+		if got, expect := string(j), `{"alert":{}}`; got != expect {
 			t.Errorf("got: %s, expect: %s", got, expect)
 		}
 	}
@@ -106,20 +106,20 @@ func TestApsMarshal(t *testing.T) {
 func TestPayloadMarshal(t *testing.T) {
 	{
 		payload := Payload{}
-		payload.Aps.Alert = "Message received from Bob"
+		payload.Aps.Alert.Body = "Message received from Bob"
 		payload.SetCustom("acme2", []string{"bang", "whiz"})
 		j, err := json.Marshal(payload)
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
 		}
-		if got, expect := string(j), `{"acme2":["bang","whiz"],"aps":{"alert":"Message received from Bob"}}`; got != expect {
+		if got, expect := string(j), `{"acme2":["bang","whiz"],"aps":{"alert":{"body":"Message received from Bob"}}}`; got != expect {
 			t.Errorf("got: %s, expect: %s", got, expect)
 		}
 	}
 
 	{
 		payload := Payload{}
-		payload.Aps.Alert = "You got your emails."
+		payload.Aps.Alert.Body = "You got your emails."
 		payload.Aps.Badge = 9
 		payload.Aps.Sound = "bingbong.aiff"
 		payload.SetCustom("acme1", "bar")
@@ -128,7 +128,7 @@ func TestPayloadMarshal(t *testing.T) {
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
 		}
-		if got, expect := string(j), `{"acme1":"bar","acme2":42,"aps":{"alert":"You got your emails.","badge":9,"sound":"bingbong.aiff"}}`; got != expect {
+		if got, expect := string(j), `{"acme1":"bar","acme2":42,"aps":{"alert":{"body":"You got your emails."},"badge":9,"sound":"bingbong.aiff"}}`; got != expect {
 			t.Errorf("got: %s, expect: %s", got, expect)
 		}
 	}
@@ -140,14 +140,14 @@ func TestPayloadMarshal(t *testing.T) {
 		if err != nil {
 			t.Fatalf("can't marshal to json: %s", err)
 		}
-		if got, expect := string(j), `{"acme2":[5,8],"aps":{}}`; got != expect {
+		if got, expect := string(j), `{"acme2":[5,8],"aps":{"alert":{}}}`; got != expect {
 			t.Errorf("got: %s, expect: %s", got, expect)
 		}
 	}
 
 	{
 		payload := Payload{}
-		payload.Aps.AlertStruct = &Alert{
+		payload.Aps.Alert = Alert{
 			LockKey:  "GAME_PLAY_REQUEST_FORMAT",
 			LockArgs: []string{"Jenna", "Frank"},
 		}
