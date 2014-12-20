@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -40,10 +41,11 @@ func New(cert_filename, key_filename, server string, timeout time.Duration) (*Ap
 	if err != nil {
 		return nil, err
 	}
-
+	nameport := strings.Split(server, ":")
 	certificate := []tls.Certificate{cert}
 	conf := &tls.Config{
 		Certificates: certificate,
+		ServerName:   nameport[0],
 	}
 
 	ret := &Apn{
